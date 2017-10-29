@@ -1,0 +1,138 @@
+﻿<div class="jumbotron">
+    <h1>推广记录</h1>
+</div>
+<div class="row">
+    <div class="gj-margin-top-10">
+        <div class="gj-float-left">
+            <form class="display-inline">
+                <input id="txtScene" type="text" placeholder="场景..." class="gj-textbox-md gj-display-inline-block gj-width-200" />
+                <button id="btnSearch" type="button" class="gj-button-md">搜索</button>
+                <button id="btnClear" type="button" class="gj-button-md">清空</button>
+            </form>
+        </div>
+        <div class="gj-float-right">
+            <button id="btnAdd" type="button" class="gj-button-md">添加场景</button>
+        </div>
+    </div>
+    <div class="gj-clear-both"></div>
+    <div class="gj-margin-top-10">
+        <table id="grid"></table>
+    </div>
+
+    <div id="dialog" class="gj-display-none">
+        <div data-role="body">
+            <input type="hidden" id="uid" />
+            <div class="gj-margin-top-20">
+                <input type="text" class="gj-textbox-md" id="scene_str" placeholder="场景...">
+            </div>
+            <div class="gj-margin-top-20">
+                <input type="text" class="gj-textbox-md" id="expire_seconds" placeholder="过期时间（天，最大30天）...">
+            </div>
+            <div class="gj-margin-top-20">
+                <input type="text" class="gj-textbox-md" id="note" placeholder="备注...">
+            </div>         
+        </div>
+        <div data-role="footer">
+            <button type="button" id="btnSave" class="gj-button-md">保存</button>
+            <button type="button" id="btnCancel" class="gj-button-md">取消</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+
+        var grid, dialog;
+
+        function Edit(e) {
+            $('#uid').val(e.data.record.uid);
+            $('#scene_str').val(e.data.record.scene_str);
+            $('#expire_seconds').val(e.data.record.expire_seconds);
+            $('#note').val(e.data.record.note);
+            dialog.open('编辑场景');
+        }
+
+        function Save() {
+            var ticke = {
+                uid: $('#uid').val(),
+                scene_str: $('#scene_str').val(),
+                expire_seconds:parseInt($('#expire_seconds').val()) * 24 * 60 * 60 ,
+                note: $('#note').val(),
+            };
+            $.ajax({ url: '/Home/Save', data: { ticke: ticke }, method: 'POST' })
+                .done(function () {
+                    dialog.close();
+                    grid.reload();
+                })
+                .fail(function () {
+                    alert('保存失败！');
+                    dialog.close();
+                });
+        }
+
+        function Delete(e) {
+            if (confirm('删除只是更新记录的状态,已分发出去的二维码还可以继续推广,确定要删除吗?')) {
+                $.ajax({ url: '/Home/Delete', data: { uid: e.data.record.uid }, method: 'POST' })
+                    .done(function () {
+                        grid.reload();
+                    })
+                    .fail(function () {
+                        alert('删除失败！');
+                    });
+            }
+        }
+
+        $(document).ready(function () {
+            grid = $('#grid').grid({
+                primaryKey: 'uid',
+                dataSource: '/Home/Get', 
+                columns: [
+                    { field: 'uid', hidden: true },
+                    { field: 'expire_seconds', hidden: true },
+                    { field: 'scene_str', title: '场景' },
+                    { field: 'create_time', title: '创建时间', sortable: true },
+                    { field: 'expire_time', title: '过期时间', sortable: true },
+                    { field: 'count', title: '推广数量', sortable: true },
+                    { title: '二维码', tmpl: '<a href="https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket={ticket}" target="_blank">二维码</a>' },
+                    { field: 'note', title: '备注' },     
+                    { width: 64, tmpl: '<span class="material-icons gj-cursor-pointer">edit</span>', align: 'center', events: { 'click': Edit } },
+                    { width: 64, tmpl: '<span class="material-icons gj-cursor-pointer">delete</span>', align: 'center', events: { 'click': Delete } }
+                ],
+                pager: { limit: 10 }
+            });
+
+            dialog = $('#dialog').dialog({
+                autoOpen: false,
+                resizable: false,
+                modal: true,
+                width: 480,
+                height:360
+            });
+
+            $('#btnAdd').on('click', function () {
+                $('#scene_str').val('');
+                $('#expire_seconds').val('');
+                $('#note').val('');
+                dialog.open('添加场景');
+            });
+            $('#btnSave').on('click', Save);
+            $('#btnCancel').on('click', function () {
+                dialog.close();
+            });
+            $('#btnSearch').on('click', function () {
+                grid.reload({ page: 1, scene: $('#txtScene').val() });
+            });
+            $('#btnClear').on('click', function () {
+                $('#txtScene').val('');
+                grid.reload({ name: '', nationality: '' });
+            });
+
+            $("#expire_seconds").keyup(function () {
+                var tmptxt = $(this).val();
+                $(this).val(tmptxt.replace(/\D|^0/g, ''));
+            }).bind("paste", function () {
+                var tmptxt = $(this).val();
+                $(this).val(tmptxt.replace(/\D|^0/g, ''));
+            }).css("ime-mode", "disabled");
+        });
+
+    </script>
+</div>
