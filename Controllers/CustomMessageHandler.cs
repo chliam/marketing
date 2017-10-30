@@ -165,13 +165,75 @@ namespace marketing.Controllers
             return base.OnEvent_UnsubscribeRequest(requestMessage);;
         }
 
+        /// <summary>
+        /// 处理文字请求
+        /// </summary>
+        /// <returns></returns>
+        public override IResponseMessageBase OnTextRequest(RequestMessageText requestMessage)
+        {
+            var response = this.CreateResponseMessage<ResponseMessageText>();
+            response.Content = string.Format("已收到你发送的文本消息：{0}", requestMessage.Content);
+            return response;
+        }
+
+        /// <summary>
+        /// 处理图片请求
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public override IResponseMessageBase OnImageRequest(RequestMessageImage requestMessage)
+        {
+            var responseMessage = CreateResponseMessage<ResponseMessageNews>();
+
+            responseMessage.Articles.Add(new Article()
+            {
+                Title = "您刚才发送了图片信息",
+                Description = "您发送的图片将会显示在边上",
+                PicUrl = requestMessage.PicUrl,
+                Url = "http://sdk.weixin.senparc.com"
+            });
+            return responseMessage;
+        }
+
+        /// <summary>
+        /// 处理语音请求
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public override IResponseMessageBase OnVoiceRequest(RequestMessageVoice requestMessage)
+        {
+            var responseMessage = CreateResponseMessage<ResponseMessageMusic>();
+
+            //设置音乐信息
+            responseMessage.Music.Title = "天籁之音";
+            responseMessage.Music.Description = "播放您上传的语音";
+            //responseMessage.Music.MusicUrl = 
+            //responseMessage.Music.HQMusicUrl = 
+            //responseMessage.Music.ThumbMediaId =
+
+            return responseMessage;
+        }
+
+        /// <summary>
+        /// 处理视频请求
+        /// </summary>
+        /// <param name="requestMessage"></param>
+        /// <returns></returns>
+        public override IResponseMessageBase OnVideoRequest(RequestMessageVideo requestMessage)
+        {
+            var responseMessage = CreateResponseMessage<ResponseMessageText>();
+            responseMessage.Content = "您发送了一条视频信息，ID：" + requestMessage.MediaId;
+            return responseMessage;
+        }
+
         public override IResponseMessageBase DefaultResponseMessage(IRequestMessageBase requestMessage)
         {
             LogHelper.LogInfo(string.Format("消息【FromUserName:{0},MsgType:{1}】", requestMessage.FromUserName, requestMessage.MsgType));
             var response = this.CreateResponseMessage<ResponseMessageText>();
-            //response.Content = DateTime.Now.ToString();
+            //response.Content = "您的消息已收到";
             return response;
         }
+
 
     }
 }
