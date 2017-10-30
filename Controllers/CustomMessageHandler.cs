@@ -70,35 +70,9 @@ namespace marketing.Controllers
         /// <returns></returns>
         public override IResponseMessageBase OnEvent_ScanRequest(RequestMessageEvent_Scan requestMessage)
         {
-            try
-            {
-                LogHelper.LogInfo(string.Format("二维码扫描关注事件【FromUserName:{0}, Event:{1}, EventKey:{2}, Ticket:{3}】", requestMessage.FromUserName, requestMessage.Event, requestMessage.EventKey, requestMessage.Ticket));
-                var tbevent = new data.tbevent();
-                tbevent.ticket = requestMessage.Ticket;
-                tbevent.@event = requestMessage.Event.ToString();
-                tbevent.from_username = requestMessage.FromUserName;
-                tbevent.to_username = requestMessage.ToUserName;
-                tbevent.msg_type = requestMessage.MsgType.ToString();
-                tbevent.create_time = DateTime.Now.Ticks;
-                tbevent.event_key = requestMessage.EventKey;
-                using (var db = data.Entities.NewInstance)
-                {
-                    db.tbevents.Add(tbevent);
-                    db.SaveChanges();
-                }
-            }
-            catch (Exception es)
-            {
-                LogHelper.LogError(es);
-            }
-            
-
-            if (!string.IsNullOrEmpty(requestMessage.EventKey))
-            {
-                var sceneId = requestMessage.EventKey.Replace("qrscene_", "");
-                
-            }
-            return base.OnEvent_ScanRequest(requestMessage);
+            var responseMessage = CreateResponseMessage<ResponseMessageText>();
+            responseMessage.Content = string.Format("您好{0}，欢迎回来！", responseMessage.FromUserName);
+            return responseMessage;
         }
 
         /// <summary>
@@ -129,12 +103,9 @@ namespace marketing.Controllers
                 LogHelper.LogError(es);
             }
 
-            if (requestMessage.EventKey.StartsWith("qrscene_"))
-            {
-                var sceneId =requestMessage.EventKey.Replace("qrscene_", "");
-            }
-
-            return base.OnEvent_SubscribeRequest(requestMessage);
+            var responseMessage = CreateResponseMessage<ResponseMessageText>();
+            responseMessage.Content = string.Format("您好{0}，欢迎关注我的公众号！", responseMessage.FromUserName);
+            return responseMessage;
         }
 
         /// <summary>
@@ -202,15 +173,17 @@ namespace marketing.Controllers
         /// <returns></returns>
         public override IResponseMessageBase OnVoiceRequest(RequestMessageVoice requestMessage)
         {
-            var responseMessage = CreateResponseMessage<ResponseMessageMusic>();
-
+            //var responseMessage = CreateResponseMessage<ResponseMessageMusic>();
             //设置音乐信息
-            responseMessage.Music.Title = "天籁之音";
-            responseMessage.Music.Description = "播放您上传的语音";
+            //responseMessage.Music.Title = "天籁之音";
+            //responseMessage.Music.Description = "播放您上传的语音";
             //responseMessage.Music.MusicUrl = 
             //responseMessage.Music.HQMusicUrl = 
             //responseMessage.Music.ThumbMediaId =
+            //return responseMessage;
 
+            var responseMessage = CreateResponseMessage<ResponseMessageText>();
+            responseMessage.Content = "您发送了一条语音信息，ID：" + requestMessage.MediaId;
             return responseMessage;
         }
 
@@ -224,6 +197,14 @@ namespace marketing.Controllers
             var responseMessage = CreateResponseMessage<ResponseMessageText>();
             responseMessage.Content = "您发送了一条视频信息，ID：" + requestMessage.MediaId;
             return responseMessage;
+        }
+
+        public override IResponseMessageBase OnEventRequest(IRequestMessageEventBase requestMessage)
+        {
+            LogHelper.LogInfo(string.Format("事件【FromUserName:{0}, Event:{1}】", requestMessage.FromUserName, requestMessage.Event));
+            var eventResponseMessage = base.OnEventRequest(requestMessage);
+            //TODO: 对Event信息进行统一操作
+            return eventResponseMessage;
         }
 
         public override IResponseMessageBase DefaultResponseMessage(IRequestMessageBase requestMessage)
